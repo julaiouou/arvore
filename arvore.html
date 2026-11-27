@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Árvore de recados</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Young+Serif&family=Figtree:wght@400;600&display=swap">
+<style>
+:root{--bg:#f3ede1;--panel:#fffaf0;--ink:#1d2b24;--muted:#5d6b63;--line:#d9cfb8;--gold:#e0a526;--btn:#b3242b;--sky:#e6dcc6}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1b2a;--panel:#17283a;--ink:#f4ecdc;--muted:#a8b4bd;--line:#2c4157;--sky:#142437}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Figtree",system-ui,sans-serif;line-height:1.5}
+header,main{max-width:1000px;margin:0 auto;padding-left:16px;padding-right:16px}
+header{padding-top:28px}
+main{padding-top:16px;padding-bottom:48px;display:grid;gap:24px;grid-template-columns:1fr}
+@media(min-width:820px){main{grid-template-columns:1.1fr 1fr;align-items:start}}
+h1{font-family:"Young Serif",Georgia,serif;font-weight:400;font-size:clamp(2rem,5vw,3rem);line-height:1.05;margin:0 0 6px}
+.status{color:var(--muted);margin:0 0 12px;font-size:.95rem}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+.stage{background:var(--sky);border-radius:20px;padding:12px;border:1px solid var(--line)}
+.stage h2{font-family:"Young Serif",Georgia,serif;font-weight:400;font-size:1.2rem;margin:4px 8px 0}
+.tw{position:relative}
+svg{display:block;width:100%;height:auto;border-radius:12px}
+#snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 8px 2px}
+.custom{margin:12px 8px 4px;display:grid;gap:10px}
+.orn{cursor:pointer;outline:none}
+.orn:hover,.orn:focus-visible{filter:drop-shadow(0 0 6px #ffd76a)}
+.orn:focus-visible .ring{stroke:var(--gold);stroke-width:2}
+.orn.sel .ring{stroke:#fff;stroke-width:2}
+.orn.pop{animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.2)}to{transform:scale(1)}}
+#star{transform-box:fill-box;transform-origin:center;animation:tw 3s ease-in-out infinite}
+@keyframes tw{50%{transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){#star,.orn.pop{animation:none}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+form{display:grid;gap:16px}
+legend{font-weight:600;font-size:.95rem}
+input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+fieldset{border:0;padding:0;margin:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.opts input{position:absolute;opacity:0;pointer-events:none}
+.opts label{cursor:pointer;display:grid;place-items:center;width:46px;height:46px;border-radius:12px;border:2px solid var(--line);background:var(--bg)}
+.opts.wide label{width:auto;padding:0 14px;height:40px;font-weight:600;font-size:.9rem}
+.opts input:checked+label{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
+.opts input:focus-visible+label{outline:3px solid var(--gold);outline-offset:2px}
+.sw{width:26px;height:26px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+button,.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:var(--btn);color:#fff;padding:12px 16px}
+.primary:disabled{opacity:.6;cursor:wait}
+.ghost{background:transparent;color:var(--muted);border:1.5px solid var(--line)}
+/* Carta de Natal */
+.letter{position:relative;background:#fffdf5;color:#2a2418;border:1px solid #e6d9b8;border-radius:6px;padding:30px 18px 14px;box-shadow:0 2px 0 #e6d9b8,0 10px 20px rgba(0,0,0,.18)}
+.letter::before{content:"";position:absolute;left:0;right:0;top:0;height:9px;border-radius:6px 6px 0 0;background:repeating-linear-gradient(135deg,#c8232c 0 12px,#fffdf5 12px 20px,#2f6fd6 20px 32px,#fffdf5 32px 40px)}
+.hello{font-family:"Caveat",cursive;font-size:1.7rem;line-height:1.1;margin:0 0 6px;color:#7a1f1f}
+textarea.paper{display:block;width:100%;height:200px;min-height:112px;resize:vertical;font-family:"Caveat",cursive;font-size:1.4rem;line-height:28px;color:#2a2418;background:#fffdf5 repeating-linear-gradient(transparent 0 27px,#c8d8ea 27px 28px);background-attachment:local;border:0;border-left:2px solid #e8a0a0;border-radius:0;padding:0 8px;margin:0}
+textarea.paper::placeholder{color:#a39877}
+.letter .count{text-align:right;font-size:.8rem;color:#7a6a45;margin:2px 0 0}
+.sign{display:flex;align-items:baseline;gap:8px;font-family:"Caveat",cursive;font-size:1.5rem;color:#2a2418;margin-top:6px}
+.sign input{flex:1;min-width:0;font:inherit;color:#7a1f1f;background:transparent;border:0;border-bottom:1.5px solid #8a7a55;border-radius:0;padding:0 4px;margin:0}
+.sign input::placeholder{color:#a39877}
+.card{margin-bottom:16px;border-radius:6px;padding:26px 18px 14px;background:#fffdf5;color:#2a2418;border:1px solid #e6d9b8;box-shadow:0 2px 0 #e6d9b8;position:relative}
+.card::before{content:"";position:absolute;left:0;right:0;top:0;height:8px;border-radius:6px 6px 0 0;background:repeating-linear-gradient(135deg,#c8232c 0 12px,#fffdf5 12px 20px,#2f6fd6 20px 32px,#fffdf5 32px 40px)}
+.card .to{font-family:"Caveat",cursive;font-size:1.7rem;line-height:1.1;margin:0 0 4px;color:#7a1f1f}
+.card .msg{font-family:"Caveat",cursive;font-size:1.5rem;line-height:1.3;margin:0 0 8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.card .from{font-family:"Caveat",cursive;font-size:1.5rem;margin:0;color:#7a1f1f;text-align:right}
+.card .acts{display:flex;gap:8px;margin-top:12px}
+.card .acts button{padding:7px 12px;font-size:.85rem;background:#2a2418;color:#fffdf5}
+.empty{color:var(--muted);margin:0 0 16px;font-size:.95rem}
+.sr{position:absolute;left:-9999px}
+.bulb{animation:blink 1.8s ease-in-out infinite}
+.bulb.b1{animation-delay:.6s}
+.bulb.b2{animation-delay:1.2s}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.bulb{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pendure um recado na árvore</h1>
+  <p class="status" id="status" role="status">Carregando…</p>
+  <div class="bar" id="bar"></div>
+</header>
+<main>
+  <section class="stage">
+    <h2 id="title">Árvore</h2>
+    <div class="tw">
+      <svg id="tree" viewBox="0 0 400 520" role="img" aria-label="Árvore de Natal com enfeites">
+        <g id="sceneg"></g>
+        <g id="treeg"></g>
+        <g id="presg"></g>
+        <g id="orns"></g>
+      </svg>
+      <canvas id="snow" aria-hidden="true"></canvas>
+    </div>
+    <div class="tools"><button type="button" class="ghost" id="snowBtn" aria-pressed="true">Neve: ligada</button></div>
+    <div class="custom" id="custom" hidden>
+      <fieldset><legend>Modelo da árvore</legend><div class="opts wide" id="styles"></div></fieldset>
+      <fieldset><legend>Cor da árvore</legend><div class="opts" id="tcolors"></div></fieldset>
+      <fieldset><legend>Cenário</legend><div class="opts wide" id="scenes"></div></fieldset>
+    </div>
+  </section>
+
+  <section class="panel" aria-live="polite">
+    <p class="empty" id="empty">Toque em um enfeite para ler o recado.</p>
+    <div class="card" id="card" hidden>
+      <p class="to" id="cTo"></p><p class="msg" id="cMsg"></p><p class="from" id="cFrom"></p>
+      <div class="acts"><button type="button" id="copy">Copiar recado</button><button type="button" id="del">Remover enfeite</button></div>
+    </div>
+    <form id="f" autocomplete="off" hidden>
+      <div class="letter">
+        <p class="hello" id="hello">Querido(a),</p>
+        <textarea id="msg" class="paper" maxlength="500" required placeholder="Escreva aqui o seu recado de Natal…" aria-label="Mensagem"></textarea>
+        <p class="count"><span id="cnt">0/500</span></p>
+        <label class="sign"><span>Com carinho,</span><input type="text" id="from" maxlength="30" required placeholder="seu nome" aria-label="De quem"></label>
+      </div>
+      <fieldset><legend>Escolha o enfeite</legend><div class="opts" id="types"></div></fieldset>
+      <button class="primary" id="add" type="submit">Pendurar na árvore</button>
+      <p id="ferr" role="alert" hidden style="margin:0;color:#e5484d;font-weight:600"></p>
+      <button class="ghost" type="button" id="clear">Limpar a árvore</button>
+    </form>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+var SUPABASE_URL = 'https://lwwznillekwthoqphdch.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_RiQ4av1jFfMAU5mxwHxYUQ_ZzYbhQBh';
+
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var S='stroke="rgba(0,0,0,.28)"';
+  var TYPES=['biscoito','quebra-nozes','rena','papai noel','boneco de neve','bengala','meia','sino','presente','azevinho','guirlanda','vela','caneca','casinha','anjo','trenó','estrela','floco de neve','bola','bola dourada'];
+  var TREE_COLORS={pinho:['Pinho','#2b7a58'],gelo:['Gelo','#5aa9d6'],algodao:['Algodão-doce','#ee8bb8'],lilas:['Lilás','#8e6bd1'],dourada:['Dourada','#d9a82b'],aurora:['Aurora','#2bb5a0'],neve:['Neve','#e6eef3'],vermelha:['Vermelha','#cf4a50'],noite:['Noite','#3a4a9a']};
+  var demo=false,items=[],sel=null,sb=null,me=null,profile=null,editable=false,ownerName='',treeStyle='classica',treeColor='pinho',scene='nenhum';
+
+  function shade(h,p){
+    var n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;
+    function f(v){return Math.max(0,Math.min(255,Math.round(p<0?v*(1+p):v+(255-v)*p)))}
+    return 'rgb('+f(r)+','+f(g)+','+f(b)+')';
+  }
+  var STYLES={
+    classica:{name:'Clássica',top:60,y0:95,y1:430,
+      hw:function(y){return Math.min(150,(y-55)/397*158)-20},
+      draw:function(m,l,d){return '<polygon points="200,150 70,340 330,340" fill="'+d+'"/><polygon points="200,60 105,220 295,220" fill="'+m+'"/><polygon points="200,120 80,330 320,330" fill="'+l+'" opacity=".9"/><polygon points="200,210 45,452 355,452" fill="'+m+'"/><polygon points="200,210 45,452 200,452" fill="'+d+'" opacity=".35"/>'}},
+    alta:{name:'Alta',top:50,y0:85,y1:430,
+      hw:function(y){return (y-50)/394*108-16},
+      draw:function(m,l,d){var s='',i,t,b,w;for(i=0;i<5;i++){t=50+i*66;b=t+130;w=40+i*17;
+        s+='<polygon points="200,'+t+' '+(200-w)+','+b+' '+(200+w)+','+b+'" fill="'+(i%2?l:m)+'"/><polygon points="200,'+t+' '+(200-w)+','+b+' 200,'+b+'" fill="'+d+'" opacity=".3"/>'}return s}},
+    fofa:{name:'Fofa',top:70,y0:100,y1:430,
+      hw:function(y){var E=[[150,78,80],[255,112,88],[370,148,78]],h=0;E.forEach(function(e){var t=(y-e[0])/e[2];if(Math.abs(t)<1)h=Math.max(h,e[1]*Math.sqrt(1-t*t))});return h-16},
+      draw:function(m,l,d){return '<ellipse cx="200" cy="370" rx="148" ry="78" fill="'+d+'"/><ellipse cx="200" cy="255" rx="112" ry="88" fill="'+m+'"/><ellipse cx="200" cy="150" rx="78" ry="80" fill="'+l+'"/>'}},
+    geometrica:{name:'Origami',top:52,y0:90,y1:435,
+      hw:function(y){return (y-52)/400*160-16},
+      draw:function(m,l,d){return '<polygon points="200,52 40,452 200,452" fill="'+d+'"/><polygon points="200,52 360,452 200,452" fill="'+m+'"/><polygon points="200,52 245,200 155,200" fill="'+l+'" opacity=".8"/><polygon points="155,200 245,200 290,330 110,330" fill="'+l+'" opacity=".35"/><polygon points="110,330 290,330 330,452 70,452" fill="'+l+'" opacity=".18"/>'}}
+  };
+
+  function ball(c){return '<rect x="-3" y="-17" width="6" height="5" fill="#d9b44a"/><circle cx="0" cy="-1" r="13" fill="'+c+'" '+S+'/><ellipse cx="-4" cy="-6" rx="3.5" ry="2" fill="#fff" opacity=".5"/>'}
+  function shape(t){
+    switch(t){
+      case 'bola dourada': return ball('#e0a526')+'<path d="M-12 -2 Q0 4 12 -2" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>';
+      case 'estrela': return '<polygon points="0,-15 4.5,-5 15,-5 6.5,2 9.5,13 0,7 -9.5,13 -6.5,2 -15,-5 -4.5,-5" fill="#f2b705" '+S+'/>';
+      case 'sino': return '<circle cx="0" cy="-14" r="2.2" fill="#8a5a14"/><path d="M0-12 C-9-12 -10 -3 -12 6 L12 6 C10 -3 9-12 0-12Z" fill="#e0a526" '+S+'/><rect x="-13" y="6" width="26" height="3.5" rx="1.7" fill="#e0a526" '+S+'/><circle cx="0" cy="13" r="3" fill="#8a5a14"/><path d="M-3-14 Q0-19 3-14" stroke="#c8232c" stroke-width="2.4" fill="none"/>';
+      case 'presente': return '<rect x="-13" y="-7" width="26" height="21" rx="2" fill="#c8232c" '+S+'/><rect x="-3" y="-7" width="6" height="21" fill="#fff" opacity=".9"/><rect x="-13" y="0" width="26" height="5" fill="#fff" opacity=".9"/><path d="M0-7 C-9-18 -14-8 0-7 C14-8 9-18 0-7Z" fill="#fff" '+S+'/>';
+      case 'bengala': return '<path d="M5 14 L5 -6 A7 7 0 0 0 -9 -6" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round"/><path d="M5 14 L5 -6 A7 7 0 0 0 -9 -6" fill="none" stroke="#c8232c" stroke-width="6.5" stroke-dasharray="4 4"/>';
+      case 'meia': return '<path d="M-6-13 L6-13 L6 2 L14 8 C16 15 8 16 4 12 L-6 4Z" fill="#c8232c" '+S+'/><rect x="-8" y="-17" width="16" height="6" rx="2.5" fill="#fff" '+S+'/><path d="M10 10 L13 12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>';
+      case 'boneco de neve': return '<circle cx="0" cy="8" r="9" fill="#fff" '+S+'/><circle cx="0" cy="-7" r="7" fill="#fff" '+S+'/><rect x="-5" y="-17" width="10" height="6" fill="#222"/><rect x="-8" y="-12" width="16" height="2.5" rx="1" fill="#222"/><rect x="-7" y="-1" width="14" height="3.5" rx="1.5" fill="#c8232c"/><path d="M0-7 L8-5 L0-4Z" fill="#e8741f"/><circle cx="-2.5" cy="-8" r="1.1" fill="#222"/><circle cx="2.5" cy="-8" r="1.1" fill="#222"/><circle cx="0" cy="6" r="1.2" fill="#222"/><circle cx="0" cy="10" r="1.2" fill="#222"/>';
+      case 'floco de neve': return '<circle r="15" fill="rgba(20,40,70,.4)"/><g stroke="#bfe3ff" stroke-width="2.4" stroke-linecap="round"><path d="M0-12V12M-10.4-6L10.4 6M-10.4 6L10.4-6"/></g>';
+      case 'biscoito': return '<circle cx="0" cy="-10" r="6.5" fill="#b9733a" '+S+'/><path d="M-4-5 L-14-7 Q-17-3 -13 0 L-5 0 L-9 12 Q-6 16 -3 12 L0 6 L3 12 Q6 16 9 12 L5 0 L13 0 Q17-3 14-7 L4-5Z" fill="#b9733a" '+S+'/><path d="M-15-2 L-13 0 L-11-2 L-9 0 M9 0 L11-2 L13 0 L15-2 M-8 11 L-6 9 L-4 11 M4 11 L6 9 L8 11" stroke="#fff" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="-2.4" cy="-11.5" r="1" fill="#fff"/><circle cx="2.4" cy="-11.5" r="1" fill="#fff"/><path d="M-3.2-8.5 Q0-6 3.2-8.5" stroke="#fff" fill="none" stroke-width="1.3" stroke-linecap="round"/><circle cx="0" cy="-2" r="1.6" fill="#c8232c"/><circle cx="0" cy="3" r="1.6" fill="#2f8f4e"/>';
+      case 'quebra-nozes': return '<rect x="-6" y="-20" width="12" height="9" rx="1.5" fill="#1f2a44" '+S+'/><rect x="-6" y="-14" width="12" height="2.5" fill="#e0a526"/><circle cx="0" cy="-7" r="5.2" fill="#f1c9a0" '+S+'/><circle cx="-2" cy="-8" r=".9" fill="#222"/><circle cx="2" cy="-8" r=".9" fill="#222"/><path d="M-4-4 Q0-1 4-4 Q0-6 -4-4Z" fill="#fff" '+S+'/><rect x="-8" y="-2" width="16" height="12" rx="2" fill="#c8232c" '+S+'/><rect x="-8" y="5" width="16" height="2.5" fill="#e0a526"/><circle cx="0" cy="0" r="1.2" fill="#e0a526"/><rect x="-11" y="-1" width="3.5" height="9" rx="1.7" fill="#c8232c" '+S+'/><rect x="7.5" y="-1" width="3.5" height="9" rx="1.7" fill="#c8232c" '+S+'/><rect x="-6.5" y="10" width="5.5" height="7" fill="#fff" '+S+'/><rect x="1" y="10" width="5.5" height="7" fill="#fff" '+S+'/><rect x="-7" y="16" width="6.5" height="3" rx="1" fill="#222"/><rect x="0.5" y="16" width="6.5" height="3" rx="1" fill="#222"/>';
+      case 'azevinho': return '<path d="M0 0 C-6-10 -16-6 -15 2 C-10 3 -4 3 0 0Z" fill="#2f8f4e" '+S+'/><path d="M0 0 C6-10 16-6 15 2 C10 3 4 3 0 0Z" fill="#2f8f4e" '+S+'/><circle cx="-3" cy="3" r="3.5" fill="#d1242f"/><circle cx="3" cy="4" r="3.5" fill="#d1242f"/><circle cx="0" cy="8" r="3.5" fill="#d1242f"/>';
+      case 'papai noel': return '<circle cx="0" cy="2" r="8" fill="#f6c9a0" '+S+'/><path d="M-9 3 Q0 21 9 3 Q0 8 -9 3Z" fill="#fff" '+S+'/><circle cx="-3" cy="0" r="1" fill="#222"/><circle cx="3" cy="0" r="1" fill="#222"/><circle cx="0" cy="3" r="1.6" fill="#e07a7a"/><path d="M-10-3 Q-8-16 0-16 Q8-16 10-3Z" fill="#c8232c" '+S+'/><circle cx="0" cy="-17" r="3" fill="#fff" '+S+'/><rect x="-11" y="-5" width="22" height="5" rx="2.5" fill="#fff" '+S+'/>';
+      case 'rena': return '<path d="M-6-8 L-9-14 M-9-14 L-13-13 M-9-14 L-10-18 M6-8 L9-14 M9-14 L13-13 M9-14 L10-18" stroke="#6b3f1a" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="-9" cy="-3" rx="4" ry="2.4" fill="#a8693a" '+S+' transform="rotate(-25 -9 -3)"/><ellipse cx="9" cy="-3" rx="4" ry="2.4" fill="#a8693a" '+S+' transform="rotate(25 9 -3)"/><path d="M-8-8 Q0-12 8-8 Q9 6 3 12 Q0 14 -3 12 Q-9 6 -8-8Z" fill="#a8693a" '+S+'/><ellipse cx="0" cy="8" rx="5" ry="4" fill="#d9b48a"/><circle cx="-3.5" cy="-2" r="1.4" fill="#222"/><circle cx="3.5" cy="-2" r="1.4" fill="#222"/><circle cx="0" cy="8" r="3" fill="#d1242f"/><path d="M-6-11 Q0-15 6-11" stroke="#2f8f4e" stroke-width="2" fill="none"/>';
+      case 'guirlanda': return '<circle r="11" fill="none" stroke="#2f8f4e" stroke-width="6"/><circle cx="-8" cy="-5" r="2" fill="#d1242f"/><circle cx="8" cy="-4" r="2" fill="#d1242f"/><circle cx="0" cy="-11" r="2" fill="#d1242f"/><path d="M0 11 L-6 18 M0 11 L6 18" stroke="#c8232c" stroke-width="3" stroke-linecap="round"/><circle cx="0" cy="11" r="2.6" fill="#c8232c"/>';
+      case 'vela': return '<rect x="-5" y="-4" width="10" height="18" rx="1.5" fill="#f4ead2" '+S+'/><path d="M-5 -1 Q-3 3 -1 -1" fill="#fff" opacity=".8"/><rect x="-1" y="-7" width="2" height="4" fill="#333"/><path d="M0-7 C-4-11 0-14 0-18 C4-14 4-10 0-7Z" fill="#f59e0b"/><path d="M-9 14 Q0 10 9 14 L9 17 L-9 17Z" fill="#2f8f4e"/>';
+      case 'caneca': return '<path d="M7-2 H11 Q14-2 14 3 Q14 8 7 7" fill="none" stroke="#c8232c" stroke-width="2.6"/><path d="M-9-6 H7 V8 Q7 13 2 13 H-4 Q-9 13 -9 8Z" fill="#c8232c" '+S+'/><rect x="-9" y="-6" width="16" height="4" fill="#7a4a21"/><circle cx="-4" cy="-8" r="2.4" fill="#fff"/><circle cx="1" cy="-9" r="2.4" fill="#fff"/><circle cx="5" cy="-7" r="2" fill="#fff"/><path d="M-4 3 L4 3" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
+      case 'casinha': return '<rect x="-11" y="-2" width="22" height="15" fill="#b9733a" '+S+'/><path d="M-14-1 L0-14 L14-1Z" fill="#fff" '+S+'/><path d="M-14-1 Q-9 4 -6-1 Q-3 4 0-1 Q3 4 6-1 Q9 4 14-1" fill="#fff"/><rect x="-3" y="4" width="6" height="9" rx="3" fill="#c8232c"/><rect x="-9" y="2" width="4" height="4" fill="#ffd54a"/><rect x="5" y="2" width="4" height="4" fill="#ffd54a"/><circle cx="-8" cy="11" r="1.3" fill="#d1242f"/><circle cx="8" cy="11" r="1.3" fill="#2f8f4e"/>';
+      case 'anjo': return '<path d="M-3 0 Q-18-10 -15 4 Q-12 6 -3 5Z" fill="#fff" '+S+'/><path d="M3 0 Q18-10 15 4 Q12 6 3 5Z" fill="#fff" '+S+'/><path d="M-5 0 H5 L9 15 H-9Z" fill="#fff" '+S+'/><circle cx="0" cy="-6" r="5" fill="#f6c9a0" '+S+'/><circle cx="-1.8" cy="-6.5" r=".8" fill="#222"/><circle cx="1.8" cy="-6.5" r=".8" fill="#222"/><ellipse cx="0" cy="-13" rx="6" ry="2" fill="none" stroke="#f2b705" stroke-width="1.8"/>';
+      case 'trenó': return '<path d="M-14 12 Q-18 12 -17 7 M-14 13 H13" stroke="#e0a526" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M-12-6 L-12 7 Q-12 11 -8 11 H8 Q12 11 12 7 L13-6 Q9-1 0-1 Q-8-1 -12-6Z" fill="#c8232c" '+S+'/><path d="M-9 4 H9" stroke="#e0a526" stroke-width="1.8"/><rect x="-6" y="-12" width="12" height="9" rx="1.5" fill="#2f8f4e" '+S+'/><path d="M-6-9 H6" stroke="#fff" stroke-width="1.6"/><path d="M0-12 V-3" stroke="#fff" stroke-width="1.6"/>';
+      default: return ball('#c8232c');
+    }
+  }
+  function say(t){$('status').textContent=t}
+  function fromRow(r){return{id:r.id,x:r.x,y:r.y,type:r.type,from:r.from_name,msg:r.message}}
+  function fit(o){var st=STYLES[treeStyle],y=Math.min(st.y1,Math.max(st.y0,o.y)),h=Math.max(8,st.hw(y)),x=Math.min(200+h,Math.max(200-h,o.x));return{x:x,y:y}}
+
+  var GARLAND={pinho:'#d1242f',gelo:'#f0902b',algodao:'#2fa36b',lilas:'#e8c33a',dourada:'#5b4bd1',aurora:'#e0457b',neve:'#c8232c',vermelha:'#2f9e5b',noite:'#f2a93b'};
+  var DECOR={
+    classica:{m:20,g:[150,225,300,375,430]},
+    alta:{m:16,g:[140,205,270,335,400]},
+    fofa:{m:16,g:[150,230,310,385]},
+    geometrica:{m:16,g:[135,210,285,360,430]}
+  };
+  function edgeAt(st,m,y){return Math.max(0,st.hw(y)+m)}
+  function rnd(a,b){var j=Math.sin(a*12.9898+b*78.233)*43758.5453;return j-Math.floor(j)}
+  function decor(st){
+    var m=DECOR[treeStyle].m,out='',pts=[],i,c;
+    for(i=0;i<18;i++){
+      var best=null,bd=-1;
+      for(c=0;c<40;c++){
+        var s=i*100+c,y=st.top+16+rnd(s,1)*(st.y1+8-st.top-16),e=Math.max(0,st.hw(y)+m-11),x=200+(rnd(s,2)*2-1)*160;
+        if(Math.abs(x-200)>e)continue;
+        var d=1e9;pts.forEach(function(p){var dd=Math.hypot(p[0]-x,p[1]-y);if(dd<d)d=dd});
+        if(d>bd){bd=d;best=[x,y]}
+      }
+      if(best)pts.push(best);
+    }
+    pts.forEach(function(p,n){
+      var big=rnd(p[0],p[1])>.6;
+      out+='<g class="bulb b'+(n%3)+'" transform="translate('+p[0].toFixed(1)+' '+p[1].toFixed(1)+')"><circle r="'+(big?6:4.5)+'" fill="#ffe066" opacity=".3"/><circle r="'+(big?2.4:1.8)+'" fill="#fff6b0"/></g>';
+    });
+    return out;
+  }
+  function presents(){
+    var B=[{x:84,w:46,h:34,c:'#c8232c',r:'#fff'},{x:136,w:30,h:24,c:'#2f6fd6',r:'#ffd54a'},{x:226,w:38,h:30,c:'#2f9e5b',r:'#c8232c'},{x:270,w:48,h:38,c:'#8e5bd1',r:'#ffd54a'},{x:322,w:26,h:20,c:'#e0a526',r:'#c8232c'}],o='<ellipse cx="200" cy="506" rx="175" ry="8" fill="rgba(0,0,0,.18)"/>';
+    B.forEach(function(b){
+      var y=504-b.h,cx=b.x+b.w/2;
+      o+='<rect x="'+b.x+'" y="'+y+'" width="'+b.w+'" height="'+b.h+'" rx="2" fill="'+b.c+'" stroke="rgba(0,0,0,.3)"/>'+
+        '<rect x="'+(cx-3)+'" y="'+y+'" width="6" height="'+b.h+'" fill="'+b.r+'"/>'+
+        '<rect x="'+b.x+'" y="'+(y+b.h*.38)+'" width="'+b.w+'" height="5" fill="'+b.r+'"/>'+
+        '<ellipse cx="'+(cx-5)+'" cy="'+(y-2)+'" rx="6" ry="4" fill="'+b.r+'" stroke="rgba(0,0,0,.25)" transform="rotate(-20 '+(cx-5)+' '+(y-2)+')"/>'+
+        '<ellipse cx="'+(cx+5)+'" cy="'+(y-2)+'" rx="6" ry="4" fill="'+b.r+'" stroke="rgba(0,0,0,.25)" transform="rotate(20 '+(cx+5)+' '+(y-2)+')"/>';
+    });
+    return o;
+  }
+  function stars(n,seed,ymax){var s='',i;for(i=0;i<n;i++){s+='<circle cx="'+(rnd(i,seed)*400).toFixed(0)+'" cy="'+(rnd(seed,i+9)*ymax).toFixed(0)+'" r="'+(.6+rnd(i,seed+3)*1.2).toFixed(1)+'" fill="#fff" opacity="'+(.5+rnd(i+5,seed)*.5).toFixed(2)+'"/>'}return s}
+  function stocking(x,c){return '<path d="M'+x+' 302 h10 v16 l9 7 q3 7 -4 10 q-6 2 -10 -4 l-5 -5z" fill="'+c+'" stroke="rgba(0,0,0,.3)"/><rect x="'+(x-1)+'" y="300" width="12" height="6" rx="2" fill="#fff"/>'}
+  var SCENES={
+    nenhum:{name:'Sem cenário',draw:function(){return ''}},
+    ceu:{name:'Céu',draw:function(){
+      return '<defs><linearGradient id="gCeu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a1238"/><stop offset=".65" stop-color="#2c3d8a"/><stop offset="1" stop-color="#7a64b0"/></linearGradient></defs>'+
+        '<rect width="400" height="520" fill="url(#gCeu)"/>'+stars(45,1,360)+
+        '<circle cx="326" cy="80" r="42" fill="#fff4cf" opacity=".14"/><circle cx="326" cy="80" r="26" fill="#fff4cf"/><circle cx="318" cy="74" r="4" fill="#e8dcae"/><circle cx="334" cy="88" r="3" fill="#e8dcae"/>'+
+        '<ellipse cx="70" cy="150" rx="46" ry="11" fill="#fff" opacity=".12"/><ellipse cx="100" cy="142" rx="30" ry="9" fill="#fff" opacity=".12"/><ellipse cx="300" cy="250" rx="52" ry="11" fill="#fff" opacity=".1"/>'+
+        '<path d="M0 455 Q120 418 240 450 T400 440 V520 H0Z" fill="#cfdcea"/><path d="M0 472 Q100 445 200 468 T400 458 V520 H0Z" fill="#eef4fa"/>';
+    }},
+    polo:{name:'Polo Norte',draw:function(){
+      return '<defs><linearGradient id="gPolo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#06203a"/><stop offset=".6" stop-color="#1c5f7a"/><stop offset="1" stop-color="#a9dcec"/></linearGradient>'+
+        '<linearGradient id="gAu1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ef0b0" stop-opacity="0"/><stop offset=".5" stop-color="#3ef0b0" stop-opacity=".55"/><stop offset="1" stop-color="#3ef0b0" stop-opacity="0"/></linearGradient>'+
+        '<linearGradient id="gAu2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b06cff" stop-opacity="0"/><stop offset=".5" stop-color="#b06cff" stop-opacity=".45"/><stop offset="1" stop-color="#b06cff" stop-opacity="0"/></linearGradient></defs>'+
+        '<rect width="400" height="520" fill="url(#gPolo)"/>'+stars(35,2,220)+
+        '<path d="M-10 110 Q80 30 170 100 T410 60 L410 180 Q310 220 200 160 T-10 200Z" fill="url(#gAu1)"/>'+
+        '<path d="M-10 190 Q100 120 200 190 T410 150 L410 250 Q300 290 190 240 T-10 280Z" fill="url(#gAu2)"/>'+
+        '<polygon points="250,470 290,410 318,440 340,420 400,470" fill="#cfeaf5"/><polygon points="0,470 30,430 60,470" fill="#dff3fb"/>'+
+        '<path d="M0 462 Q100 446 200 460 T400 456 V520 H0Z" fill="#e4f4fb"/><path d="M0 482 Q120 466 240 480 T400 474 V520 H0Z" fill="#f6fcff"/>'+
+        '<path d="M14 474 A48 48 0 0 1 110 474Z" fill="#f4fbff" stroke="#b6d4e3"/><path d="M22 454 H102 M30 436 H94 M44 420 H80 M62 426 V438 M44 454 V440 M80 454 V440" stroke="#b6d4e3" fill="none"/>'+
+        '<path d="M46 474 V462 A14 14 0 0 1 74 462 V474Z" fill="#29506b"/>'+
+        '<line x1="352" y1="474" x2="352" y2="376" stroke="#fff" stroke-width="9" stroke-linecap="round"/><line x1="352" y1="474" x2="352" y2="376" stroke="#c8232c" stroke-width="9" stroke-dasharray="9 9"/><circle cx="352" cy="371" r="7" fill="#f2b705"/>'+
+        '<rect x="321" y="396" width="64" height="18" rx="3" fill="#fff" stroke="#c8232c"/><text x="353" y="409" text-anchor="middle" font-size="8" font-weight="700" fill="#c8232c" font-family="Figtree,sans-serif">POLO NORTE</text>';
+    }},
+    fabrica:{name:'Fábrica do Papai Noel',draw:function(){
+      var w='',y;
+      [170,260,350].forEach(function(y){[24,336].forEach(function(x){
+        w+='<rect x="'+(x-4)+'" y="'+(y-4)+'" width="48" height="58" fill="#3a1410"/><rect x="'+x+'" y="'+y+'" width="40" height="50" fill="#ffd36b"/><rect x="'+(x-14)+'" y="'+(y-14)+'" width="68" height="78" fill="#ffd36b" opacity=".12"/><path d="M'+(x+20)+' '+y+'V'+(y+50)+'M'+x+' '+(y+25)+'H'+(x+40)+'" stroke="#3a1410" stroke-width="3"/>';
+      })});
+      function belt(x){return '<rect x="'+x+'" y="460" width="84" height="10" rx="4" fill="#3d3d44"/><circle cx="'+(x+8)+'" cy="465" r="6" fill="#6a6a72"/><circle cx="'+(x+76)+'" cy="465" r="6" fill="#6a6a72"/><rect x="'+(x+10)+'" y="440" width="22" height="20" fill="#c8232c" stroke="rgba(0,0,0,.3)"/><rect x="'+(x+19)+'" y="440" width="4" height="20" fill="#fff"/><rect x="'+(x+44)+'" y="446" width="20" height="14" fill="#2f6fd6" stroke="rgba(0,0,0,.3)"/><rect x="'+(x+52)+'" y="446" width="4" height="14" fill="#ffd54a"/>'}
+      return '<defs><linearGradient id="gFab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1030"/><stop offset="1" stop-color="#5a2a4e"/></linearGradient>'+
+        '<pattern id="pBrick" width="40" height="20" patternUnits="userSpaceOnUse"><rect width="40" height="20" fill="#8c3328"/><path d="M0 10H40M20 0V10M0 10V20M40 10V20" stroke="#5e2019" stroke-width="1.5" fill="none"/></pattern></defs>'+
+        '<rect width="400" height="520" fill="url(#gFab)"/>'+stars(30,3,90)+
+        '<rect x="50" y="56" width="26" height="50" fill="#6d2a22"/><rect x="324" y="56" width="26" height="50" fill="#6d2a22"/>'+
+        '<circle cx="64" cy="40" r="11" fill="#cfcfd6" opacity=".35"/><circle cx="74" cy="22" r="9" fill="#cfcfd6" opacity=".25"/><circle cx="338" cy="40" r="11" fill="#cfcfd6" opacity=".35"/><circle cx="330" cy="22" r="9" fill="#cfcfd6" opacity=".25"/>'+
+        '<rect x="10" y="100" width="380" height="380" fill="url(#pBrick)"/><rect x="10" y="100" width="380" height="30" fill="#4a1612"/>'+
+        '<text x="105" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#ffd36b" font-family="Figtree,sans-serif">FÁBRICA DO</text><text x="295" y="121" text-anchor="middle" font-size="13" font-weight="700" fill="#ffd36b" font-family="Figtree,sans-serif">PAPAI NOEL</text>'+
+        w+'<rect y="470" width="400" height="50" fill="#dbe6f0"/>'+belt(0)+belt(316);
+    }},
+    sala:{name:'Sala com lareira',draw:function(){
+      var pl='',i;for(i=0;i<5;i++)pl+='M0 '+(462+i*12)+'H400 ';
+      return '<defs><pattern id="pWall" width="28" height="10" patternUnits="userSpaceOnUse"><rect width="28" height="10" fill="#7d3426"/><rect width="14" height="10" fill="#873a2b"/></pattern>'+
+        '<pattern id="pBr2" width="30" height="16" patternUnits="userSpaceOnUse"><rect width="30" height="16" fill="#b25a45"/><path d="M0 8H30M15 0V8M0 8V16M30 8V16" stroke="#7d3a2c" stroke-width="1.4" fill="none"/></pattern></defs>'+
+        '<rect width="400" height="520" fill="url(#pWall)"/>'+
+        '<rect y="462" width="400" height="58" fill="#8a5a2e"/><path d="'+pl+'M60 462V474M180 474V486M300 462V474M120 486V498" stroke="#5e3b1c" stroke-width="1.4" fill="none"/><rect y="454" width="400" height="9" fill="#4a2a14"/>'+
+        '<circle cx="56" cy="430" r="70" fill="#ff9a3c" opacity=".16"/>'+
+        '<rect x="6" y="302" width="100" height="154" fill="url(#pBr2)"/><rect x="0" y="286" width="112" height="16" rx="2" fill="#4a2a14"/>'+
+        '<path d="M30 456 V382 Q30 360 56 360 Q82 360 82 382 V456Z" fill="#1a0d08"/>'+
+        '<rect x="34" y="446" width="44" height="8" rx="4" fill="#5a3520"/><path d="M40 450 Q36 428 52 412 Q50 434 60 422 Q68 438 72 450Z" fill="#ff7a18"/><path d="M49 450 Q49 436 57 428 Q61 440 64 450Z" fill="#ffd54a"/>'+
+        stocking(18,'#c8232c')+stocking(46,'#2f9e5b')+stocking(78,'#fff')+
+        '<rect x="288" y="146" width="104" height="130" fill="#4a2a14"/><rect x="298" y="156" width="84" height="110" fill="#14264a"/><path d="M340 156V266M298 211H382" stroke="#4a2a14" stroke-width="4"/>'+
+        '<circle cx="318" cy="176" r="8" fill="#fff4cf"/><circle cx="360" cy="190" r="1.5" fill="#fff"/><circle cx="326" cy="236" r="1.5" fill="#fff"/><circle cx="366" cy="244" r="1.5" fill="#fff"/><circle cx="352" cy="170" r="1.3" fill="#fff"/>'+
+        '<rect x="282" y="142" width="20" height="140" fill="#b3242b"/><rect x="378" y="142" width="20" height="140" fill="#b3242b"/><rect x="276" y="138" width="128" height="6" rx="3" fill="#e0a526"/>'+
+        '<ellipse cx="200" cy="494" rx="172" ry="17" fill="#a3202a"/><ellipse cx="200" cy="494" rx="156" ry="12" fill="none" stroke="#e0a526" stroke-width="1.5"/>';
+    }}
+  };
+  function renderTree(){
+    var st=STYLES[treeStyle],base=TREE_COLORS[treeColor][1];
+    $('sceneg').innerHTML=SCENES[scene].draw();$('presg').innerHTML=presents();
+    if(cv){var hid=scene==='sala';cv.style.display=hid?'none':'';if(!hid&&cv.width<10)sizeSnow()}
+    $('treeg').innerHTML='<rect x="175" y="440" width="50" height="50" rx="4" fill="#6b4423"/>'+st.draw(base,shade(base,.22),shade(base,-.28))+decor(st)+
+      '<g transform="translate(200 '+(st.top-14)+') scale(.78)"><polygon id="star" points="0,-26 7,-6 28,-6 11,6 17,26 0,14 -17,26 -11,6 -28,-6 -7,-6" fill="#ffe27a" stroke="#b8860b" stroke-width="1.5"/></g>';
+    render();
+  }
+
+  var NS='http://www.w3.org/2000/svg',layer=$('orns');
+  function render(newId){
+    layer.innerHTML='';
+    items.forEach(function(o){
+      var p=fit(o),g=document.createElementNS(NS,'g');
+      g.setAttribute('class','orn'+(o.id===sel?' sel':'')+(o.id===newId?' pop':''));
+      g.setAttribute('transform','translate('+p.x+' '+p.y+')');
+      g.setAttribute('tabindex','0');g.setAttribute('role','button');
+      g.setAttribute('aria-label','Recado de '+o.from);
+      g.innerHTML='<circle class="ring" r="19" fill="transparent" stroke="none"/>'+shape(TYPES.indexOf(o.type)<0?'bola':o.type);
+      g.addEventListener('click',function(){select(o.id)});
+      g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();select(o.id)}});
+      layer.appendChild(g);
+    });
+  }
+  function select(id){
+    sel=id;var o=items.filter(function(i){return i.id===id})[0];
+    if(!o){$('card').hidden=true;$('empty').hidden=false;render();return}
+    $('cTo').textContent='Querido(a) '+ownerName+',';$('cMsg').textContent=o.msg;$('cFrom').textContent='Com carinho, '+o.from;
+    $('del').hidden=!editable;$('card').hidden=false;$('empty').hidden=true;render();
+  }
+  function place(){
+    var st=STYLES[treeStyle],best=null,bd=-1;
+    for(var i=0;i<50;i++){
+      var y=st.y0+Math.random()*(st.y1-st.y0),h=st.hw(y);
+      if(h<8)continue;
+      var x=200+(Math.random()*2-1)*h,d=Infinity;
+      items.forEach(function(o){var p=fit(o),dd=Math.hypot(p.x-x,p.y-y);if(dd<d)d=dd});
+      if(d>=36)return{x:Math.round(x),y:Math.round(y)};
+      if(d>bd){bd=d;best={x:Math.round(x),y:Math.round(y)}}
+    }
+    return best||{x:200,y:300};
+  }
+
+  TYPES.forEach(function(t,i){
+    $('types').insertAdjacentHTML('beforeend','<input type="radio" name="type" id="t'+i+'" value="'+t+'"'+(i===0?' checked':'')+'><label for="t'+i+'" title="'+t+'"><svg viewBox="-20 -20 40 40" width="32" height="32" aria-hidden="true">'+shape(t)+'</svg><span class="sr">'+t+'</span></label>');
+  });
+  Object.keys(STYLES).forEach(function(k,i){
+    $('styles').insertAdjacentHTML('beforeend','<input type="radio" name="tstyle" id="s'+i+'" value="'+k+'"><label for="s'+i+'">'+STYLES[k].name+'</label>');
+  });
+  Object.keys(TREE_COLORS).forEach(function(k,i){
+    $('tcolors').insertAdjacentHTML('beforeend','<input type="radio" name="tcolor" id="k'+i+'" value="'+k+'"><label for="k'+i+'" title="'+TREE_COLORS[k][0]+'"><span class="sw" style="background:'+TREE_COLORS[k][1]+'"></span><span class="sr">'+TREE_COLORS[k][0]+'</span></label>');
+  });
+  Object.keys(SCENES).forEach(function(k,i){
+    $('scenes').insertAdjacentHTML('beforeend','<input type="radio" name="scene" id="sc'+i+'" value="'+k+'"><label for="sc'+i+'">'+SCENES[k].name+'</label>');
+  });
+  function syncCustom(){
+    var a=document.querySelector('input[name=tstyle][value='+treeStyle+']'),b=document.querySelector('input[name=tcolor][value='+treeColor+']');
+    var c=document.querySelector('input[name=scene][value="'+scene+'"]');
+    if(a)a.checked=true;if(b)b.checked=true;if(c)c.checked=true;
+  }
+  function saveVisual(){
+    if(!editable||!profile||demo)return;
+    sb.from('profiles').update({tree_style:treeStyle,tree_color:treeColor,scene:scene}).eq('id',profile.id).then(function(r){
+      if(!r.error)return;
+      sb.from('profiles').update({tree_style:treeStyle,tree_color:treeColor}).eq('id',profile.id).then(function(r2){
+        say(r2.error?'Não foi possível salvar o visual da árvore ('+(r2.error.code||r2.error.message)+').':'O cenário não foi salvo: rode o supabase-setup.sql novo no Supabase.');
+      });
+    });
+  }
+  $('custom').addEventListener('change',function(e){
+    if(e.target.name==='tstyle')treeStyle=e.target.value;
+    else if(e.target.name==='tcolor')treeColor=e.target.value;
+    else if(e.target.name==='scene')scene=e.target.value;
+    else return;
+    renderTree();saveVisual();
+  });
+  $('msg').addEventListener('input',function(){$('cnt').textContent=$('msg').value.length+'/500'});
+
+  $('f').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var p=place(),b=$('add');
+    if(demo){
+      var d={id:Date.now(),x:p.x,y:p.y,type:document.querySelector('input[name=type]:checked').value,from:$('from').value.trim(),msg:$('msg').value.trim()};
+      if(!d.from||!d.msg)return;
+      items.push(d);select(d.id);render(d.id);$('msg').value='';$('cnt').textContent='0/500';return;
+    }
+    b.disabled=true;
+    var r=await sb.from('ornaments').insert({owner_id:profile.id,color:'#c8232c',from_name:$('from').value.trim(),message:$('msg').value.trim(),
+      type:document.querySelector('input[name=type]:checked').value,x:p.x,y:p.y}).select().single();
+    b.disabled=false;
+    if(r.error){var fe=$('ferr');fe.textContent='Não foi possível pendurar o enfeite agora ('+(r.error.code||r.error.message||'erro')+'). Tente de novo.';fe.hidden=false;return}
+    $('ferr').hidden=true;
+    var o=fromRow(r.data);items.push(o);select(o.id);render(o.id);
+    $('msg').value='';$('cnt').textContent='0/500';say('');
+  });
+  $('del').addEventListener('click',async function(){
+    if(!editable||!sel)return;
+    if(demo){items=items.filter(function(i){return i.id!==sel});select(null);return}
+    var r=await sb.from('ornaments').delete().eq('id',sel);
+    if(r.error){say('Não foi possível remover agora.');return}
+    items=items.filter(function(i){return i.id!==sel});select(null);
+  });
+  $('clear').addEventListener('click',async function(){
+    if(!editable||!items.length||!confirm('Remover todos os enfeites da sua árvore?'))return;
+    if(demo){items=[];select(null);return}
+    var r=await sb.from('ornaments').delete().eq('owner_id',profile.id);
+    if(r.error){say('Não foi possível limpar agora.');return}
+    items=[];select(null);
+  });
+  $('copy').addEventListener('click',function(){
+    var o=items.filter(function(i){return i.id===sel})[0];if(!o)return;var b=this;
+    try{navigator.clipboard.writeText(o.msg+' — '+o.from).then(function(){b.textContent='Copiado!';setTimeout(function(){b.textContent='Copiar recado'},1500)},function(){})}catch(e){}
+  });
+
+  function btn(txt,fn,href){
+    var el=document.createElement(href?'a':'button');el.className='btn ghost';el.textContent=txt;
+    if(href)el.href=href;else{el.type='button';el.addEventListener('click',fn)}
+    $('bar').appendChild(el);return el;
+  }
+  async function boot(){
+    var slug=new URLSearchParams(location.search).get('u');
+    var s=await sb.auth.getSession();me=s.data.session&&s.data.session.user;
+    var q=sb.from('profiles').select('*');
+    if(slug)q=q.eq('slug',slug);
+    else{if(!me){location.replace('login.html');return}q=q.eq('id',me.id)}
+    var r=await q.maybeSingle();
+    if(r.error||!r.data){say((slug?'Não encontramos essa árvore. Confira o link.':'Não foi possível carregar seu perfil. Saia e entre de novo.')+(r.error?' Detalhe: '+(r.error.code||'')+' '+(r.error.message||''):''));
+      if(me)btn('Sair',signOut);else btn('Entrar','', 'login.html');return}
+    demo=false;profile=r.data;ownerName=profile.name;editable=!!me&&me.id===profile.id;
+    if(STYLES[profile.tree_style])treeStyle=profile.tree_style;
+    if(TREE_COLORS[profile.tree_color])treeColor=profile.tree_color;
+    if(SCENES[profile.scene])scene=profile.scene;
+    $('f').hidden=false;$('clear').hidden=!editable;$('hello').textContent='Querido(a) '+ownerName+',';
+    var o=await sb.from('ornaments').select('*').eq('owner_id',profile.id).order('created_at');
+    if(o.error){say('Não foi possível carregar os enfeites agora. Detalhe: '+(o.error.code||'')+' '+(o.error.message||''));return}
+    items=o.data.map(fromRow);
+    if(editable){
+      $('title').textContent='Minha árvore';$('from').value=profile.name;$('custom').hidden=false;syncCustom();
+      say('Você entrou como '+profile.name+'. Compartilhe o link para as pessoas pendurarem recados na sua árvore.');
+      btn('Copiar link da minha árvore',function(){
+        var url=location.origin+location.pathname+'?u='+profile.slug,b=this;
+        try{navigator.clipboard.writeText(url).then(function(){b.textContent='Link copiado!';setTimeout(function(){b.textContent='Copiar link da minha árvore'},1800)},function(){})}catch(e){}
+      });
+      btn('Sair',signOut);
+    }else{
+      $('title').textContent='Árvore de '+profile.name;say('Árvore de '+profile.name+'. Escolha um enfeite, escreva seu recado e pendure na árvore.');
+      if(me){var mp=await sb.from('profiles').select('name').eq('id',me.id).maybeSingle();if(mp.data)$('from').value=mp.data.name}
+      if(me)btn('Ir para minha árvore','',location.pathname);else btn('Entrar para criar a minha','', 'login.html');
+    }
+    renderTree();select(null);
+  }
+  function startDemo(why){
+    demo=true;editable=true;ownerName='amigo(a)';profile={id:'demo',name:'Você'};
+    items=[{id:1,x:200,y:150,type:'estrela',from:'Ana',msg:'Feliz Natal! Que a sua casa se encha de luz.'},
+      {id:2,x:165,y:250,type:'biscoito',from:'Bia',msg:'Separei um biscoito de gengibre só para você.'},
+      {id:3,x:238,y:290,type:'rena',from:'Caio',msg:'A rena já está pronta para a noite de Natal!'},
+      {id:4,x:190,y:355,type:'quebra-nozes',from:'Duda',msg:'Que o ano novo seja doce e cheio de alegria.'},
+      {id:5,x:130,y:395,type:'presente',from:'Edu',msg:'Seu presente é o meu abraço apertado.'},
+      {id:6,x:262,y:400,type:'sino',from:'Fê',msg:'Ouço os sinos... é Natal!'}];
+    $('f').hidden=false;$('clear').hidden=false;$('custom').hidden=false;
+    $('title').textContent='Minha árvore (demonstração)';$('hello').textContent='Querido(a) amigo(a),';$('from').value='';
+    syncCustom();renderTree();select(null);$('bar').innerHTML='';
+    say(why||'Modo demonstração: nada é salvo. No site publicado, a árvore fica salva na sua conta.');
+  }
+  async function signOut(){await sb.auth.signOut();location.replace('login.html')}
+
+  var cv=$('snow'),cx=cv.getContext('2d'),flakes=[],snowOn=!matchMedia('(prefers-reduced-motion: reduce)').matches,raf=0;
+  function sizeSnow(){
+    var r=cv.getBoundingClientRect();cv.width=r.width;cv.height=r.height;flakes=[];
+    for(var i=0;i<Math.round(r.width/9);i++)flakes.push({x:Math.random()*r.width,y:Math.random()*r.height,r:1+Math.random()*2.2,v:.3+Math.random()*.8,d:Math.random()*6});
+  }
+  function tick(){
+    cx.clearRect(0,0,cv.width,cv.height);if(!snowOn)return;
+    cx.fillStyle='#fff';cx.strokeStyle='rgba(60,90,120,.35)';
+    flakes.forEach(function(f){f.y+=f.v;f.d+=.02;f.x+=Math.sin(f.d)*.4;if(f.y>cv.height){f.y=-4;f.x=Math.random()*cv.width}cx.beginPath();cx.arc(f.x,f.y,f.r,0,6.283);cx.fill();cx.stroke()});
+    raf=requestAnimationFrame(tick);
+  }
+  function setSnow(on){snowOn=on;$('snowBtn').textContent='Neve: '+(on?'ligada':'desligada');$('snowBtn').setAttribute('aria-pressed',String(on));cancelAnimationFrame(raf);tick()}
+  $('snowBtn').addEventListener('click',function(){setSnow(!snowOn)});
+  window.addEventListener('resize',sizeSnow);sizeSnow();setSnow(snowOn);
+  renderTree();
+
+  if(SUPABASE_URL.indexOf('COLE_AQUI')===0||!window.supabase){startDemo();return}
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  var done=false,timer=setTimeout(function(){if(!done)startDemo('Modo demonstração: não foi possível conectar ao servidor, então nada será salvo.')},5000);
+  boot().then(function(){done=true;clearTimeout(timer)}).catch(function(e){done=true;clearTimeout(timer);startDemo('Modo demonstração: não foi possível conectar ao servidor ('+((e&&e.message)||e)+'). Nada será salvo.')});
+})();
+</script>
+</body>
+</html>
