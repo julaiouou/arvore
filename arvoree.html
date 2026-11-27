@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Árvore de recados</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;600&display=swap">
+<style>
+:root{--bg:#f3ede1;--panel:#fffaf0;--ink:#1d2b24;--muted:#5d6b63;--line:#d9cfb8;--pine:#1f5a41;--pine2:#2b7a58;--pine3:#174632;--gold:#e0a526;--btn:#b3242b;--sky:#e6dcc6}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1b2a;--panel:#17283a;--ink:#f4ecdc;--muted:#a8b4bd;--line:#2c4157;--pine:#2a7a56;--pine2:#379168;--pine3:#1d5a40;--sky:#142437}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Figtree",system-ui,sans-serif;line-height:1.5}
+header,main{max-width:1000px;margin:0 auto;padding-left:16px;padding-right:16px}
+header{padding-top:28px}
+main{padding-top:16px;padding-bottom:48px;display:grid;gap:24px;grid-template-columns:1fr}
+@media(min-width:820px){main{grid-template-columns:1.1fr 1fr;align-items:start}}
+h1{font-family:"Young Serif",Georgia,serif;font-weight:400;font-size:clamp(2rem,5vw,3rem);line-height:1.05;margin:0 0 6px}
+.status{color:var(--muted);margin:0 0 12px;font-size:.95rem}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+.stage{position:relative;background:var(--sky);border-radius:20px;padding:12px;border:1px solid var(--line)}
+.stage h2{font-family:"Young Serif",Georgia,serif;font-weight:400;font-size:1.2rem;margin:4px 8px 0}
+svg{display:block;width:100%;height:auto}
+#snow{position:absolute;left:12px;top:12px;width:calc(100% - 24px);height:calc(100% - 86px);pointer-events:none}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 8px 2px}
+.orn{cursor:pointer;outline:none}
+.orn:hover,.orn:focus-visible{filter:drop-shadow(0 0 6px #ffd76a)}
+.orn:focus-visible .ring{stroke:var(--gold);stroke-width:2}
+.orn.sel .ring{stroke:#fff;stroke-width:2}
+.orn.pop{animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.2)}to{transform:scale(1)}}
+#star{transform-origin:200px 52px;animation:tw 3s ease-in-out infinite}
+@keyframes tw{50%{transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){#star,.orn.pop{animation:none}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+form{display:grid;gap:14px}
+label,legend{font-weight:600;font-size:.95rem}
+input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:4px}
+textarea{resize:vertical;min-height:90px}
+input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+fieldset{border:0;padding:0;margin:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.opts input{position:absolute;opacity:0;pointer-events:none}
+.opts label{cursor:pointer;display:grid;place-items:center;width:46px;height:46px;border-radius:12px;border:2px solid var(--line);background:var(--bg)}
+.opts input:checked+label{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
+.opts input:focus-visible+label{outline:3px solid var(--gold);outline-offset:2px}
+.sw{width:26px;height:26px;border-radius:50%}
+.count{font-weight:400;color:var(--muted);font-size:.85rem;float:right}
+button,.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:var(--btn);color:#fff;padding:12px 16px}
+.primary:disabled{opacity:.6;cursor:wait}
+.ghost{background:transparent;color:var(--muted);border:1.5px solid var(--line)}
+.card{margin-bottom:16px;border-radius:14px;padding:18px 18px 14px;background:#fff8e1;color:#2a2418;border:1px dashed #c9a24a}
+.card .to{font-family:"Young Serif",Georgia,serif;font-size:1.25rem;margin:0 0 6px}
+.card .msg{margin:0 0 10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.card .from{margin:0;font-weight:600;color:#7a5a12}
+.card .acts{display:flex;gap:8px;margin-top:12px}
+.card .acts button{padding:7px 12px;font-size:.85rem;background:#2a2418;color:#fff8e1}
+.empty{color:var(--muted);margin:0 0 16px;font-size:.95rem}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pendure um recado na árvore</h1>
+  <p class="status" id="status" role="status">Carregando…</p>
+  <div class="bar" id="bar"></div>
+</header>
+<main>
+  <section class="stage">
+    <h2 id="title">Árvore</h2>
+    <svg id="tree" viewBox="0 0 400 520" role="img" aria-label="Árvore de Natal com enfeites">
+      <rect x="175" y="440" width="50" height="50" rx="4" fill="#6b4423"/>
+      <polygon points="200,150 70,340 330,340" fill="var(--pine3)"/>
+      <polygon points="200,60 105,220 295,220" fill="var(--pine)"/>
+      <polygon points="200,120 80,330 320,330" fill="var(--pine2)" opacity=".9"/>
+      <polygon points="200,210 45,452 355,452" fill="var(--pine)"/>
+      <polygon points="200,210 45,452 200,452" fill="var(--pine3)" opacity=".35"/>
+      <polygon id="star" points="200,22 207,42 228,42 211,54 217,74 200,62 183,74 189,54 172,42 193,42" fill="#e0a526"/>
+      <g id="orns"></g>
+    </svg>
+    <canvas id="snow" aria-hidden="true"></canvas>
+    <div class="tools"><button type="button" class="ghost" id="snowBtn" aria-pressed="true">Neve: ligada</button></div>
+  </section>
+
+  <section class="panel" aria-live="polite">
+    <p class="empty" id="empty">Toque em um enfeite para ler o recado.</p>
+    <div class="card" id="card" hidden>
+      <p class="to" id="cTo"></p><p class="msg" id="cMsg"></p><p class="from" id="cFrom"></p>
+      <div class="acts"><button type="button" id="copy">Copiar recado</button><button type="button" id="del">Remover enfeite</button></div>
+    </div>
+    <form id="f" autocomplete="off" hidden>
+      <label>De quem<input type="text" id="from" maxlength="30" required placeholder="Seu nome"></label>
+      <label>Mensagem <span class="count" id="cnt">0/140</span>
+        <textarea id="msg" maxlength="140" required placeholder="Escreva aqui o seu recado de Natal"></textarea></label>
+      <fieldset><legend>Enfeite</legend><div class="opts" id="types"></div></fieldset>
+      <fieldset><legend>Cor</legend><div class="opts" id="colors"></div></fieldset>
+      <button class="primary" id="add" type="submit">Pendurar na árvore</button>
+      <button class="ghost" type="button" id="clear">Limpar a árvore</button>
+    </form>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// Cole os mesmos dados usados no login.html (Supabase > Project Settings > API).
+var SUPABASE_URL = 'https://lwwznillekwthoqphdch.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_RiQ4av1jFfMAU5mxwHxYUQ_ZzYbhQBh';
+
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var COLORS={Vermelho:'#c8232c',Dourado:'#e0a526',Azul:'#2f6fd6',Prata:'#b9c3cc',Rosa:'#e0568f',Verde:'#2f9e5b'};
+  var TYPES=['bola','estrela','sino','presente','bengala','meia','boneco de neve','floco de neve','coração'];
+  var items=[], sel=null, sb=null, me=null, profile=null, editable=false;
+
+  function shape(t,c){
+    var S='stroke="rgba(0,0,0,.28)"';
+    switch(t){
+      case 'estrela': return '<polygon points="0,-15 4.5,-5 15,-5 6.5,2 9.5,13 0,7 -9.5,13 -6.5,2 -15,-5 -4.5,-5" fill="'+c+'" '+S+'/>';
+      case 'coração': return '<path d="M0 12 C-18 0 -14 -14 -6 -13 C-2 -12 0 -8 0 -8 C0 -8 2 -12 6 -13 C14 -14 18 0 0 12Z" fill="'+c+'" '+S+'/>';
+      case 'sino': return '<circle cx="0" cy="-14" r="2.2" fill="#8a5a14"/><path d="M0-12 C-9-12 -10 -3 -12 6 L12 6 C10 -3 9-12 0-12Z" fill="'+c+'" '+S+'/><rect x="-13" y="6" width="26" height="3.5" rx="1.7" fill="'+c+'" '+S+'/><circle cx="0" cy="13" r="3" fill="#8a5a14"/>';
+      case 'presente': return '<rect x="-13" y="-7" width="26" height="21" rx="2" fill="'+c+'" '+S+'/><rect x="-3" y="-7" width="6" height="21" fill="#fff" opacity=".9"/><rect x="-13" y="0" width="26" height="5" fill="#fff" opacity=".9"/><path d="M0-7 C-9-18 -14-8 0-7 C14-8 9-18 0-7Z" fill="#fff" '+S+'/>';
+      case 'bengala': return '<path d="M5 14 L5 -6 A7 7 0 0 0 -9 -6" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round"/><path d="M5 14 L5 -6 A7 7 0 0 0 -9 -6" fill="none" stroke="'+c+'" stroke-width="6.5" stroke-dasharray="4 4"/>';
+      case 'meia': return '<path d="M-6-13 L6-13 L6 2 L14 8 C16 15 8 16 4 12 L-6 4Z" fill="'+c+'" '+S+'/><rect x="-8" y="-17" width="16" height="6" rx="2.5" fill="#fff" '+S+'/>';
+      case 'boneco de neve': return '<circle cx="0" cy="8" r="9" fill="#fff" '+S+'/><circle cx="0" cy="-7" r="7" fill="#fff" '+S+'/><rect x="-7" y="-1" width="14" height="3.5" rx="1.5" fill="'+c+'"/><path d="M0-7 L8-5 L0-4Z" fill="#e8741f"/><circle cx="-2.5" cy="-9" r="1.1" fill="#222"/><circle cx="2.5" cy="-9" r="1.1" fill="#222"/>';
+      case 'floco de neve': return '<circle r="15" fill="rgba(20,40,70,.35)"/><g stroke="'+c+'" stroke-width="2.4" stroke-linecap="round"><path d="M0-12V12M-10.4-6L10.4 6M-10.4 6L10.4-6"/></g>';
+      default: return '<rect x="-3" y="-17" width="6" height="5" fill="#d9b44a"/><circle cx="0" cy="-1" r="13" fill="'+c+'" '+S+'/><ellipse cx="-4" cy="-6" rx="3.5" ry="2" fill="#fff" opacity=".5"/>';
+    }
+  }
+  function say(t){$('status').textContent=t}
+  function fromRow(r){return{id:r.id,x:r.x,y:r.y,type:r.type,color:r.color,from:r.from_name,msg:r.message}}
+
+  var NS='http://www.w3.org/2000/svg', layer=$('orns');
+  function render(newId){
+    layer.innerHTML='';
+    items.forEach(function(o){
+      var g=document.createElementNS(NS,'g');
+      g.setAttribute('class','orn'+(o.id===sel?' sel':'')+(o.id===newId?' pop':''));
+      g.setAttribute('transform','translate('+(+o.x)+' '+(+o.y)+')');
+      g.setAttribute('tabindex','0');g.setAttribute('role','button');
+      g.setAttribute('aria-label','Recado de '+o.from);
+      var c=/^#[0-9a-f]{6}$/i.test(o.color)?o.color:'#c8232c';
+      g.innerHTML='<circle class="ring" r="19" fill="transparent" stroke="none"/>'+shape(TYPES.indexOf(o.type)<0?'bola':o.type,c);
+      g.addEventListener('click',function(){select(o.id)});
+      g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();select(o.id)}});
+      layer.appendChild(g);
+    });
+  }
+  function select(id){
+    sel=id;var o=items.filter(function(i){return i.id===id})[0];
+    if(!o){$('card').hidden=true;$('empty').hidden=false;render();return}
+    $('cTo').textContent='Recado de '+o.from;$('cMsg').textContent=o.msg;$('cFrom').textContent='';
+    $('del').hidden=!editable;$('card').hidden=false;$('empty').hidden=true;render();
+  }
+  function place(){
+    var best=null,bd=-1;
+    for(var i=0;i<40;i++){
+      var y=95+Math.random()*335,hw=Math.min(150,(y-55)/397*158)-20;
+      if(hw<6)continue;
+      var x=200+(Math.random()*2-1)*hw,d=Infinity;
+      items.forEach(function(o){var dd=Math.hypot(o.x-x,o.y-y);if(dd<d)d=dd});
+      if(d>=36)return{x:Math.round(x),y:Math.round(y)};
+      if(d>bd){bd=d;best={x:Math.round(x),y:Math.round(y)}}
+    }
+    return best||{x:200,y:300};
+  }
+
+  TYPES.forEach(function(t,i){
+    $('types').insertAdjacentHTML('beforeend','<input type="radio" name="type" id="t'+i+'" value="'+t+'"'+(i===0?' checked':'')+'><label for="t'+i+'" title="'+t+'"><svg viewBox="-20 -20 40 40" width="30" height="30" aria-hidden="true">'+shape(t,'#c8232c')+'</svg><span class="sr">'+t+'</span></label>');
+  });
+  Object.keys(COLORS).forEach(function(n,i){
+    $('colors').insertAdjacentHTML('beforeend','<input type="radio" name="color" id="c'+i+'" value="'+COLORS[n]+'"'+(i===0?' checked':'')+'><label for="c'+i+'" title="'+n+'"><span class="sw" style="background:'+COLORS[n]+'"></span><span class="sr">'+n+'</span></label>');
+  });
+  $('msg').addEventListener('input',function(){$('cnt').textContent=$('msg').value.length+'/140'});
+
+  $('f').addEventListener('submit',async function(e){
+    e.preventDefault();if(!editable)return;
+    var p=place(),b=$('add');b.disabled=true;
+    var r=await sb.from('ornaments').insert({owner_id:profile.id,from_name:$('from').value.trim(),message:$('msg').value.trim(),
+      type:document.querySelector('input[name=type]:checked').value,color:document.querySelector('input[name=color]:checked').value,x:p.x,y:p.y}).select().single();
+    b.disabled=false;
+    if(r.error){say('Não foi possível pendurar o enfeite agora. Tente de novo.');return}
+    var o=fromRow(r.data);items.push(o);select(o.id);render(o.id);
+    $('msg').value='';$('cnt').textContent='0/140';say('');
+  });
+  $('del').addEventListener('click',async function(){
+    if(!editable||!sel)return;
+    var r=await sb.from('ornaments').delete().eq('id',sel);
+    if(r.error){say('Não foi possível remover agora.');return}
+    items=items.filter(function(i){return i.id!==sel});select(null);
+  });
+  $('clear').addEventListener('click',async function(){
+    if(!editable||!items.length||!confirm('Remover todos os enfeites da sua árvore?'))return;
+    var r=await sb.from('ornaments').delete().eq('owner_id',profile.id);
+    if(r.error){say('Não foi possível limpar agora.');return}
+    items=[];select(null);
+  });
+  $('copy').addEventListener('click',function(){
+    var o=items.filter(function(i){return i.id===sel})[0];if(!o)return;var b=this;
+    try{navigator.clipboard.writeText(o.msg+' — '+o.from).then(function(){b.textContent='Copiado!';setTimeout(function(){b.textContent='Copiar recado'},1500)},function(){})}catch(e){}
+  });
+
+  function btn(txt,fn,href){
+    var el=document.createElement(href?'a':'button');el.className='btn ghost';el.textContent=txt;
+    if(href)el.href=href;else{el.type='button';el.addEventListener('click',fn)}
+    $('bar').appendChild(el);return el;
+  }
+  async function boot(){
+    var slug=new URLSearchParams(location.search).get('u');
+    var s=await sb.auth.getSession();me=s.data.session&&s.data.session.user;
+    var q=sb.from('profiles').select('id,name,slug');
+    if(slug)q=q.eq('slug',slug);
+    else{if(!me){location.replace('login.html');return}q=q.eq('id',me.id)}
+    var r=await q.maybeSingle();
+    if(r.error||!r.data){say(slug?'Não encontramos essa árvore. Confira o link.':'Não foi possível carregar seu perfil. Saia e entre de novo.');
+      if(me)btn('Sair',signOut);else btn('Entrar','', 'login.html');return}
+    profile=r.data;editable=!!me&&me.id===profile.id;$('f').hidden=false;$('clear').hidden=!editable;
+    var o=await sb.from('ornaments').select('*').eq('owner_id',profile.id).order('created_at');
+    if(o.error){say('Não foi possível carregar os enfeites agora.');return}
+    items=o.data.map(fromRow);
+    if(editable){
+      $('title').textContent='Minha árvore';$('from').value=profile.name;
+      say('Você entrou como '+profile.name+'. Compartilhe o link para as pessoas pendurarem recados na sua árvore.');
+      btn('Copiar link da minha árvore',function(){
+        var url=location.origin+location.pathname+'?u='+profile.slug,b=this;
+        try{navigator.clipboard.writeText(url).then(function(){b.textContent='Link copiado!';setTimeout(function(){b.textContent='Copiar link da minha árvore'},1800)},function(){})}catch(e){}
+      });
+      btn('Sair',signOut);
+    }else{
+      $('title').textContent='Árvore de '+profile.name;say('Árvore de '+profile.name+'. Escolha um enfeite, escreva seu nome e seu recado e pendure na árvore.');
+      if(me){var mp=await sb.from('profiles').select('name').eq('id',me.id).maybeSingle();if(mp.data)$('from').value=mp.data.name}
+      if(me)btn('Ir para minha árvore','',location.pathname);else btn('Entrar para criar a minha','', 'login.html');
+    }
+    select(null);
+  }
+  async function signOut(){await sb.auth.signOut();location.replace('login.html')}
+
+  var cv=$('snow'),cx=cv.getContext('2d'),flakes=[],snowOn=!matchMedia('(prefers-reduced-motion: reduce)').matches,raf=0;
+  function sizeSnow(){
+    var r=cv.getBoundingClientRect();cv.width=r.width;cv.height=r.height;flakes=[];
+    for(var i=0;i<Math.round(r.width/9);i++)flakes.push({x:Math.random()*r.width,y:Math.random()*r.height,r:1+Math.random()*2.2,v:.3+Math.random()*.8,d:Math.random()*6});
+  }
+  function tick(){
+    cx.clearRect(0,0,cv.width,cv.height);if(!snowOn)return;
+    cx.fillStyle='#fff';cx.strokeStyle='rgba(60,90,120,.35)';
+    flakes.forEach(function(f){f.y+=f.v;f.d+=.02;f.x+=Math.sin(f.d)*.4;if(f.y>cv.height){f.y=-4;f.x=Math.random()*cv.width}cx.beginPath();cx.arc(f.x,f.y,f.r,0,6.283);cx.fill();cx.stroke()});
+    raf=requestAnimationFrame(tick);
+  }
+  function setSnow(on){snowOn=on;$('snowBtn').textContent='Neve: '+(on?'ligada':'desligada');$('snowBtn').setAttribute('aria-pressed',String(on));cancelAnimationFrame(raf);tick()}
+  $('snowBtn').addEventListener('click',function(){setSnow(!snowOn)});
+  window.addEventListener('resize',sizeSnow);sizeSnow();setSnow(snowOn);
+
+  if(SUPABASE_URL.indexOf('COLE_AQUI')===0||!window.supabase){say('Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do script deste arquivo.');return}
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  boot().catch(function(){say('Não foi possível conectar agora. Verifique sua internet e tente de novo.')});
+})();
+</script>
+</body>
+</html>
